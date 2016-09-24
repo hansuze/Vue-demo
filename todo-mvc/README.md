@@ -1,2 +1,2 @@
-### 基于MVC的 todolist
+### 符合MVC的todoList
 #### 使用 Web Storage 存储数据
