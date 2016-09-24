@@ -140,7 +140,7 @@
       <div class="pie-controller">
         <div class="range-ct" v-for ="range in ranges">
           <label @dblclick="startEdit(range)">{{range.label}} </label>
-          <span class="percent">{{range.value |  concat '%'}}</span>
+          <span class="percent">{{range.value | concat '%'}}</span>
           <input type="range" v-model="range.value" :max="remainValue + range.value">
           <button class="btn" @click="remove(range)">x</button>
         </div>
@@ -178,7 +178,8 @@
     <script>
       Vue.filter('concat', function(value, input) {
         return value + input;
-      })
+      });
+
       Vue.component('color-panel-model', {
         template: '#color-panel-model',
 
