@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>todo</title>
+      <script src="http://vuejs.org/js/vue.js"></script>
+      <script src="https://cdn.jsdelivr.net/vue.router/0.7.10/vue-router.min.js"></script>
+    <style>
+      body {
+        font-family: arial, sans-serif;
+
+        background: #eee;
+      }
+
+      ul,li {
+        margin: 0;
+        padding: 0;
+
+        list-style: none;
+      }
+
+      .clearfix::after {
+        display: block;
+
+        height: 0;
+
+        clear:both;
+        content: "";
+      }
+
+      .layers {
+        display: inline-block;
+
+        position: absolute;
+        left: 50%;
+        top: 200px;
+
+        color: #4d4d4d;
+        background: #fff;
+
+        transform: translateX(-50%);
+
+        box-shadow: -1px 0 0 rgba(0, 0, 0, .2),
+                    1px 0 0  rgba(0, 0, 0, .2),
+                    0 1px 0  0 rgba(0, 0, 0, .2),
+                    0 15px 0 -5px #fff,
+                    0 15px 0 -4px rgba(0, 0, 0, .2),
+                    0 30px 0 -10px #fff,
+                    0 30px 0 -9px rgba(0, 0, 0, .2);
+
+
+      }
+
+      .layers .title {
+        position: absolute;
+        top: -150px;
+        left: 0;
+        width: 100%;
+
+        margin: 20px auto;
+
+        font-size: 80px;
+        text-align: center;
+
+        color: rgba(175, 47, 47, 0.15);
+      }
+
+      .cursor {
+        cursor: pointer;
+      }
+
+      .done {
+        text-decoration: line-through;
+
+        opacity: .8;
+      }
+
+      .header {
+        position: relative;
+
+        border-bottom: 1px solid #eee;
+      }
+
+      .header .new-todo {
+        margin: 0;
+        margin-right: -20px;
+        margin-left: 45px;
+        border: 0;
+        padding: 8px;
+        width: 500px;
+        height: 40px;
+
+        font-size: 24px;
+        line-height: 40px;
+
+        color: inherit;
+        background: transparent;
+
+        outline: 0;
+      }
+
+      .header .new-todo::-webkit-input-placeholder {
+        font-style: italic;
+      }
+
+      .header .new-todo::-moz-placeholder {
+        font-style: italic;
+      }
+
+      .header .new-todo::input-placeholder {
+        font-style: italic;
+      }
+
+      .troggle-all {
+        display: inline-block;
+
+        position: absolute;
+        left: -10px;
+        top: 10px;
+
+        margin: 0;
+        border: 0;
+        width: 60px;
+        height: 40px;
+
+        transform: rotate(90deg);
+
+        -webkit-appearance: none;
+        appearance: none;
+        outline: 0;
+        cursor: pointer;
+      }
+
+      .troggle-all::before{
+        margin: 0 0 0 23px;
+
+        font-size: 22px;
+
+        color: #333;
+
+        opacity: .6;
+
+        content: '❯';
+      }
+
+      .troggle-all:checked::before {
+        opacity: 1;
+      }
+
+      .main {
+        overflow-y: auto;
+
+        max-height: 500px;
+      }
+
+      .main .item::before{
+        display: inline;
+
+        font-size: 40px;
+        line-height: 40px;
+        vertical-align: middle;
+
+        content: "";
+      }
+
+      .main > li {
+        position: relative;
+
+        border-bottom: 1px solid #eee;
+        height: 60px;
+
+        font-size: 24px;
+        line-height: 1.4em;
+      }
+
+      .main  input,
+      .main  span,
+      .main  a {
+        margin: 0;
+
+        vertical-align: middle;
+      }
+      .main  input {
+        font-family: inherit;
+        font-size: inherit;
+
+        color: inherit;
+      }
+      .main .view {
+        margin: 0;
+        box-sizing: border-box;
+        padding: 10px;
+        height: 100%;
+        width: 545px;
+      }
+
+      .main .view label {
+        display: block;
+        overflow: hidden;
+
+        margin-left: 45px;
+        margin-right: 40px;
+        box-sizing: border-box;
+        height: 100%;   /* 避免无字符时不能点击*/
+
+        line-height: 40px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+
+      .main .view label.done {
+        text-decoration: line-through;
+      }
+
+      .main .view:hover .btn {
+        color: rgba(175, 47, 47, 0.5);
+      }
+
+      .main .view .btn{
+        float: right;
+        margin-right: 10px;
+
+        font-size: 24px;
+        text-decoration: none;
+
+        color: transparent;
+      }
+
+      .main .view .btn:hover {
+        color: rgba(175, 47, 47, 0.8);
+      }
+
+      .main .edit {
+        margin: 0;
+        margin-left: 45px;
+        box-sizing: border-box;
+        padding: 8px;
+        width: 500px;
+        height: 100%;
+
+      }
+
+      .main .complete {
+        display: inline-block;
+
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        margin: 0;
+        border: 0;
+        width: 40px;
+        height: 60px;
+
+        -webkit-appearance: none;
+        appearance: none;
+        outline: 0;
+        cursor: pointer;
+      }
+
+      .main .complete::before{
+        display: inline-block;
+
+        margin: 15px 5px 15px 5px;
+        border: 1px solid #eee;
+        border-radius: 50%;
+
+        width: 30px;
+        height: 30px;
+
+        font-size: 22px;
+        text-indent: .3em;
+        color: #42b983;
+
+        content: '\a0';
+      }
+
+      .main .complete:checked::before {
+        content: "\2714";
+      }
+
+      .footer {
+        position: relative;
+
+        margin: .8em;
+
+        font-size: 15px;
+
+        color: #665;
+      }
+
+      .footer a{
+        text-decoration: none;
+
+        color: inherit;
+      }
+
+      .footer .filters {
+        text-align: center;
+      }
+
+      .footer .filters li{
+        display: inline-block;
+
+        margin: 0 .6em;
+      }
+
+      .footer .filters .selected {
+        position: relative;
+      }
+      .footer .filters .selected::before {
+        display: block;
+
+        position: absolute;
+        left: -.6em;
+        top: -.4em;
+        right: -.6em;
+        bottom: -.4em;
+
+        border-radius: .3em;
+
+        box-shadow: 0 0 2px rgba(0, 0, 0, .3);
+
+        content: "";
+      }
+
+      .footer .active-num {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+
+      .footer .clear-complete {
+        position: absolute;
+        right: 0;
+        top: 0;
+      }
+
+      .footer .clear-complete:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="demo">
+      <div class="layers">
+        <h3 class="title">todos</h3>
+        <div class="header">
+          <input class="troggle-all" type="checkbox" v-model="allDone" >
+          <input class="new-todo" placeholder="What needs to be done ?"
+                 v-model="newTodo" type="text" @keyup.enter="addNewItem">
+        </div>
+        <ul class="main">
+          <li v-for="item in filtertodos" class="cursor" :class="{'done': item.done}" transition="troggle">
+             <input class="edit"
+                      v-show="editCache === item"
+                      v-todo-focus="editCache === item"
+                      @blur="doneEdit(item)"
+                      @keyup.enter="doneEdit(item)"
+                      @keyup.esc = "cancelEdit(item)"
+                      v-model="editTodo">
+            <div class="view clearfix" v-show="editCache !== item">
+              <input class="complete" type="checkbox" v-model="item.complete">
+              <a class="btn" href="javascript:void(0);" @click="removeItem(item)">x</a>
+              <label :class="{done: item.complete}" @dblclick="editedTodo(item)">{{item.label}}</label>
+            </div>
+          </li>
+        </ul>
+        <div class="footer">
+          <label class="active-num">{{activeNum}} {{activeNum | pluralize 'item'}} left</label>
+          <a class="clear-complete"  href="javascript:void(0);"
+              v-show="activeNum != todos.length"
+              @click="clearComplete">clear complete</a>
+          <ul class="filters" >
+            <li v-for="state in filtersState">
+              <a href="javascript:void(0)" @click="changeFilter(state)"
+                 :class="{'selected': visibility==state}">{{state | capitalize}}</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      var filters = {
+        'all': function(todos) {
+          return todos;
+        },
+
+        complete: function(todos) {
+          return todos.filter(function(item) {
+            return item.complete;
+          });
+        },
+
+        active: function(todos) {
+          return todos.filter(function(item) {
+            return !item.complete;
+          })
+        }
+      };
+
+      var local = (function() {
+        var save = function(name,data) {
+          localStorage.setItem(name, JSON.stringify(data));
+        };
+        var get = function(name) {
+          return JSON.parse(localStorage.getItem(name));
+        };
+
+        return {
+          save: save,
+          get: get
+        };
+
+      })();
+
+      Vue.directive('todo-focus', function(value) {
+        if (value) {
+          var el = this.el;
+          Vue.nextTick(function() {
+            el.focus();
+          })
+        }
+
+      });
+
+      new Vue({
+        el: '#demo',
+
+        data: function() {
+           return {
+            todos: local.get('todo_list')|| [],
+            newTodo: '',
+            editTodo: '',
+            editCache: null,
+            visibility: 'all',
+            activeNum: 0,
+            filtersState: ['all', 'active', 'complete']
+          };
+        },
+
+        computed: {
+          filtertodos: function() {
+            return filters[this.visibility](this.todos);
+          },
+
+          activeNum: function() {
+            return filters.active(this.todos).length;
+          },
+
+          allDone: {
+            get: function() {
+              return filters.active(this.todos).length == 0;
+            },
+
+            set: function(val) {
+              var _self = this;
+              this.todos.forEach(function(item) {
+                item.complete = val;
+              })
+            }
+          }
+
+        },
+
+        watch: {
+         todos: {
+           handler: function(val) {
+             local.save('todo_list', val);
+           },
+
+           deep: true
+         }
+        },
+
+        methods: {
+          newItem: function(item){
+            return {
+              label: item,
+              complete: false
+            };
+          },
+
+          addNewItem: function() {
+            var newTodo = this.newTodo.trim(),
+                newItem;
+            if (newTodo === '') {
+              return;
+            }
+
+            newItem = this.newItem(this.newTodo);
+            this.todos.push(newItem);
+            this.newTodo = '';
+          },
+
+          removeItem: function(item) {
+            this.todos.$remove(item);
+          },
+
+          editedTodo: function(item) {
+            this.editTodo = item.label;
+            this.editCache = item;
+          },
+          doneEdit: function(item) {
+            var editTodo  = this.editTodo.trim();
+
+            if (!this.editCache) {
+              return;
+            }
+
+            if (!editTodo) {
+              this.removeItem(item)
+            }
+
+            item.label = editTodo;
+            this.editCache = null;
+          },
+
+          cancelEdit: function(item) {
+            this.editTodo = '';
+            this.editCache = null;
+          },
+
+          changeFilter: function(val) {
+            this.visibility = val;
+          },
+
+          clearComplete: function() {
+            var _self = this;
+
+            this.todos.forEach(function(item) {
+              if (item.complete) {
+                _self.removeItem(item);
+              }
+
+            });
+
+          }
+        }
+
+      });
+
+    </script>
+  </body>
+</html>

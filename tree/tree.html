@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="http://vuejs.org/js/vue.js"></script>
+    <style>
+      .item {
+        color: #444;
+
+        cursor: pointer;
+      }
+
+      .bold {
+        font-weight: bold;
+      }
+
+      .item ul li{
+        padding-left: 1em;
+
+        line-height: 1.5em;
+      }
+    </style>
+    <title>树状视图</title>
+  </head>
+  <body>
+    <template id="item">
+      <li>
+        <div :class="{bold:isFolder}"
+             @click="troggle"
+             @dblclick="changeType"
+
+             >
+          {{model.name}}
+          <span v-if="isFolder">[{{open ? '-' : '+'}}]</span>
+        </div>
+        <ul v-show="open" v-if="isFolder">
+          <item class="item"
+                v-for="childModel in model.children"
+                :model="childModel">
+          </item>
+          <li @click="addChild">+</li>
+        </ul>
+      </li>
+    </template>
+    <ul id="demo">
+      <item class="item" :model="modelData"></item>
+    </ul>
+    <script>
+      Vue.component('item', {
+        template: '#item',
+
+        props: ['model'],
+
+        data: function() {
+          return {
+            open: false,
+            isFolder: this.model.children ? true : false
+          }
+        },
+
+        methods: {
+          troggle: function() {
+            this.open = !this.open;
+          },
+
+          changeType: function() {
+            this.isFolder = !this.isFolder;
+            if (!this.model.children) {
+              this.model.children = [];
+              this.addChild();
+            }
+
+          },
+
+          addChild: function() {
+            this.model.children.push({name: 'new stuff'})
+          }
+        }
+      });
+
+      new Vue({
+        el: '#demo',
+
+        data: {
+          modelData: {
+            name: 'my Tree',
+
+            children: [
+              {name: 'hello'},
+
+              {name: 'Vue'},
+
+              {
+                name: 'child folder',
+                children: [
+                  {
+                    name: 'child folder',
+                    children: [
+                      {name: 'hello'},
+
+                      {name: 'Vue'},
+                    ]
+                  },
+
+                  {name: 'hello'},
+
+                  {name: 'Vue'}
+                ]
+              }
+            ]
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

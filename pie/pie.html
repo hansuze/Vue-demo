@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="http://vuejs.org/js/vue.js"></script>
+    <script src="http://apps.bdimg.com/libs/jquery/1.9.1/jquery.js"></script>
+    <title>饼图</title>
+  </head>
+  <body>
+    <style>
+       ul,
+       li {
+         list-style: none;
+       }
+
+       .btn {
+         display: inline-block;
+
+         border: 1px solid rgba(0, 0, 0, 0.1);
+         border-radius: .3em;
+         padding: .2em .6em;
+
+         line-height: 120%;
+         text-decoration: none;
+
+         background:linear-gradient(hsla(0, 0%, 100%, 0.2), transparent);
+
+         text-shadow: 0 -.05em .05em rgba(0, 0, 0, .5);
+         box-shadow: 0 .05em .25em rgba(0, 0, 0, .5);
+         cursor: pointer;
+       }
+
+      .pie {
+        position: relative;
+
+        height: 100px;
+        width: 100px;
+      }
+
+      .pie svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+
+        border-radius: 50%;
+        height: 100px;
+        width: 100px;
+      }
+
+      .pie circle {
+        fill: transparent;
+        stroke-width: 32;
+
+      }
+
+      .pie svg:first-child circle {
+        fill: #9acd32;
+      }
+
+      .pie-show .color-box {
+        display: inline-block;
+
+        width: 1em;
+        height: 1em;
+        line-height: 1em;
+      }
+
+      .pie-controller .range-ct {
+        padding: 0;
+        padding-bottom: .6em;
+      }
+
+      .pie-controller .percent {
+        display: inline-block;
+
+        width: 2em;
+        width: 4ch;
+      }
+
+      .pie-controller input[type="range"] {
+        vertical-align: middle;
+      }
+
+      .color-panel {
+        display: inline-block;
+
+        position: relative;
+
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+        width: 2em;
+        height: 1.4em;
+
+        text-align: right;
+        vertical-align: middle;
+      }
+
+      .color-panel ul {
+        position: absolute;
+        left: 0;
+        top: 100%;
+
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .color-panel li {
+        border: 1px solid transparent;
+        box-sizing: border-box;
+        width: 100%;
+        height: 100%;
+      }
+
+      .color-panel > ul li:hover {
+        border: 0;
+      }
+
+      .color-panel li.selected {
+        border: 1px solid #665;
+      }
+
+      #demo .btn{
+        color: #fff;
+        background-color: #6b0;
+      }
+    </style>
+    <template id="pie-model">
+      <div class="pie" v-pie="ranges"></div>
+      <ul class="pie-show">
+        <li v-for="range in ranges">
+          <span class="color-box" :style="{background: range.color}"></span>
+          {{range.label}}: {{range.value | concat '%'}}
+        </li>
+      </ul>
+    </template>
+
+    <template id="pie-control-model">
+      <div class="pie-controller">
+        <div class="range-ct" v-for ="range in ranges">
+          <label @dblclick="startEdit(range)">{{range.label}} </label>
+          <span class="percent">{{range.value |  concat '%'}}</span>
+          <input type="range" v-model="range.value" :max="remainValue + range.value">
+          <button class="btn" @click="remove(range)">x</button>
+        </div>
+      </div>
+    </template>
+
+    <template id="color-panel-model">
+      <div class="color-panel"
+           :style="{background: selectColor, color: selectColor ? '#fff' : '#655'}"
+           @click="troggle"> ...
+        <ul v-show="dropDown">
+          <li v-for="color in colorPannel"
+              :class="{selected: selectColor == color}"
+              :style="{background: color, 'background-clip':'content-box'}"
+              @click="getSelectColor(color)"></li>
+        </ul>
+      </div>
+    </template>
+
+    <div id="demo">
+      <pie-model :ranges="ranges"></pie-model>
+      <pie-controller-model :ranges.sync="ranges" @remove-range="removeRange"></pie-controller-model>
+      <form @submit.prevent="addRange">
+        <input type="text" v-model="newLabel">
+        <color-panel-model :select-color.sync="newColor"
+                           :color-pannel ="colorPannel">
+                           {{colorPannel| json}}</color-panel-model>
+        <button class="btn">add</button>
+
+      </form>
+
+    </div>
+
+
+    <script>
+      Vue.filter('concat', function(value, input) {
+        return value + input;
+      })
+      Vue.component('color-panel-model', {
+        template: '#color-panel-model',
+
+        props: {
+          selectColor: {
+            type: String,
+            twoWay: true
+          },
+          colorPannel: {
+            type: Array
+          }
+        },
+
+        data: function() {
+          return {
+            dropDown: false
+          };
+        },
+
+        methods: {
+          troggle: function() {
+            this.dropDown = !this.dropDown;
+          },
+
+          getSelectColor: function(color) {
+            this.selectColor = color;
+          }
+        }
+      })
+      Vue.component('pie-controller-model', {
+        template: '#pie-control-model',
+
+        props: {
+          ranges: {
+            type: Array,
+            twoWay: true
+          }
+        },
+
+        computed: {
+          remainValue: function() {
+            var remain = 100;
+
+            this.ranges.forEach(function(range) {
+              remain -= range.value;
+            })
+
+            return remain;
+          }
+        },
+
+        methods: {
+          remove: function(range) {
+            this.$dispatch('remove-range', range);
+          }
+        }
+      });
+
+      Vue.component('pie-model', {
+        template: '#pie-model',
+
+        props:['ranges']
+      });
+      Vue.directive('pie',{
+        deep: true,
+
+        update: function(ranges) {
+                  var el = this.el,
+                      round = 100,
+                      r = 15.9,
+                      d =r * 2,
+                      rangeSum = -0.25;
+
+                   el.innerHTML = '';
+                   ranges.forEach(function(range) {
+                     var ns = 'http://www.w3.org/2000/svg',
+                         svg = document.createElementNS(ns, 'svg'),
+                         circle = document.createElementNS(ns, 'circle'),
+                         percent = (/^[0-9]+/.exec(range.value)) || 0;
+
+                         svg.setAttribute('viewBox', '0 0 ' + d + ' ' + d);
+                         svg.style.transform ='rotate(' + rangeSum + 'turn)';
+                         circle.setAttribute('r', r);
+                         circle.setAttribute('cx', r);
+                         circle.setAttribute('cy', r);
+                         circle.setAttribute('stroke', '#655');
+                         circle.setAttribute('stroke-width', d);
+                         circle.style.stroke = range.color;
+                         circle.setAttribute('stroke-dasharray', percent + ' ' + round);
+
+
+                         rangeSum += range.value / round;
+                         svg.appendChild(circle);
+                         el.appendChild(svg);
+                   });
+                 }
+      });
+
+      var colorPannel = ['#F44336', '#3F51B5', '#2196F3' ,'#4CAF50', '#ffc107', '#9e9e9e'];
+
+      new Vue({
+        el: '#demo',
+
+        data: {
+          ranges: [
+            {
+              label: 'A',
+              value: 30,
+              color: '#f44336'
+            },
+
+            {
+              label: 'B',
+              value: 25,
+              color: '#2196f3'
+            }
+          ],
+
+          components: ['pie-model', 'pie-controler-model','color-panel-model'],
+
+          colorPannel: colorPannel,
+
+          newLabel: '',
+          newColor: '',
+        },
+
+        methods: {
+          addRange: function() {
+            var label = this.newLabel.trim(),
+                unique = true
+                newColor = this.newColor;
+
+            this.ranges.forEach(function(range) {
+              if (newColor.toLowerCase() === range.color.toLowerCase()) {
+                alert('当前饼图中已有相同颜色!');
+                return  unique = false;
+              }
+            });
+
+            if (!label) {
+              alert('描述不能为空!');
+              return false;
+            }
+
+            if (!newColor) {
+              alert('颜色不能为空!');
+              return false;
+            }
+
+            if (unique) {
+              this.ranges.push({
+                label: this.newLabel.trim(),
+                color:this.newColor,
+                value: 0
+              });
+
+              this.clearValue();
+            }
+
+          },
+
+          removeRange: function(range) {
+            if (this.ranges.length === 1) {
+              return;
+            }
+            this.ranges.$remove(range);
+          },
+
+          clearValue: function() {
+            this.newLabel = '',
+            this.newColor = ''
+          }
+        }
+
+      });
+
+    </script>
+  </body>
+</html>

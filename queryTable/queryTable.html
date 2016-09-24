@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="http://vuejs.org/js/vue.js"></script>
+    <script src="http://apps.bdimg.com/libs/jquery/1.9.1/jquery.js"></script>
+    <title>表格组件</title>
+    <style>
+      .query-table {
+        border: 2px solid #42b983;
+        border-radius: 3px;
+        padding: 2px;
+
+        text-align: center;
+      }
+
+      .query-table th,
+      .query-table td {
+        padding: 10px 20px;
+        min-width: 120px;
+      }
+
+      .query-table th {
+        color: #fff;
+        background: #42b983;
+
+        cursor: pointer;
+      }
+
+      .query-table td {
+        cursor: pointer;
+      }
+
+      .query-table tr.data-row.hover td {
+        background: #ccc;
+      }
+
+      .query-table .data-row:nth-child(2n) td {
+        background: #eee;
+      }
+
+      .query-table .arrow {
+        display: inline-block;
+
+        border: .35em solid;
+        width: 0;
+        height: 0;
+
+        vertical-align: .2em;
+
+        opacity: .6;
+      }
+
+      .query-table .active .arrow {
+        opacity: 1;
+      }
+
+      .query-table tr .asc {
+        border-color: transparent;
+        border-bottom-color: inherit;
+      }
+
+      .query-table tr .desc {
+        border-color: transparent;
+        border-top-color: inherit;
+
+        vertical-align: -.18em;
+      }
+    </style>
+  </head>
+  <body>
+    <template id='query-grid'>
+      <table class="query-table" v-grid-row-select="selectedRow">
+        <tbody>
+          <tr>
+            <th v-for="key in columns" @click="orderBy(key)" :class="{active: key== sortKey}">
+              {{key}}
+              <span class="arrow" :class="sortOrder[key] > 0 ? 'asc' : 'desc'"></span>
+            </th>
+          </tr>
+        </tbody>
+        <tbody>
+          <tr class="data-row"
+              v-for="entry in data
+                    | filterBy filterKey
+                    | orderBy  sortKey sortOrder[sortKey]"
+              :uid="entry.uid"
+          ><td v-for="key in columns">{{entry[key]}}</td>
+        </tr>
+        </tbody>
+      </table>
+    </template>
+
+    <div id="demo">
+      <input type="text" @click.stop="show"
+                         v-model ="searchQuery">
+      <p>{{ gridData[selectIdx]| json}}</p>
+      <query-grid v-show="isShow"
+                  :filter-key="searchQuery"
+                  :columns="gridColums"
+                  :data="gridData"
+                  :selected-row.sync="selectIdx"
+                  :show.sync="isShow"
+
+      ></query-grid>
+    </div>
+    <script>
+      // 自定义指令
+      Vue.directive('grid-row-select', {
+        twoWay: true,
+
+        bind: function() {
+          var _self = this,
+              setActive = function(idx) {
+                $(_self.el).find('.data-row').removeClass('hover');
+                $(_self.el).find('.data-row[uid=' + idx + ']').addClass('hover');
+              };
+
+          $(this.el).on('click', '.data-row', function(e) {
+            e.stopPropagation();
+            var idx = $(this).attr('uid');
+
+            _self.set(idx);
+            _self.vm.show = false;
+            setActive(idx);
+          });
+
+          // 如果不是操作表格就隐藏
+          $(window).on('click', function(e) {
+            if (this != _self.el) {
+              _self.vm.show = false;
+            }
+
+          })
+
+          $(this.el).on('mouseenter', '.data-row', function() {
+            setActive($(this).index());
+          });
+
+
+        },
+
+        update: function(value) {
+          $(this.el).val(value).trigger('click');
+        },
+
+        unbind: function() {
+          $(this.el).off('click').off('mouseenter');
+        }
+      });
+
+      Vue.component('query-grid', {
+        template: '#query-grid',
+
+        props: {
+          columns: Array,
+          data: Array,
+          filterKey: String,
+          selectedRow: {
+            twoWay: true
+          },
+          show: {
+            type: Boolean,
+            twoWay: true
+          }
+        },
+
+        data: function(){
+          var sortOrder = {};
+
+          this.columns.forEach(function(key) {
+            sortOrder[key] = 1;
+          });
+
+          return {
+            sortKey: '',
+            sortOrder: sortOrder
+          };
+
+        },
+
+        methods: {
+          orderBy: function(key) {
+            this.sortKey = key;
+            this.sortOrder[key] = this.sortOrder[key] * -1;
+          }
+        }
+
+      });
+
+      new Vue({
+        el: '#demo',
+
+        data: {
+          searchQuery: '',
+          gridColums: ['name', 'salary'],
+          gridData: [
+              {uid: 0, name: 'xiaohan', salary: 5000},
+
+              {uid: 1, name: 'Adam', salary: 6000},
+
+              {uid: 2, name: 'Elieen', salary: 8000},
+
+              {uid: 3, name: 'Jack', salary: 7000}
+          ],
+          selectIdx: -1,
+          isShow: false
+        },
+
+        methods: {
+          show: function() {
+            this.isShow = true;
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

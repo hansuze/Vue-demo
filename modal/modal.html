@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="http://vuejs.org/js/vue.js"></script>
+    <script src="http://apps.bdimg.com/libs/jquery/1.9.1/jquery.js"></script>
+    <style>
+       h3 {
+         margin: 0;
+       }
+
+       .btn {
+         display: inline-block;
+
+         border: 1px solid rgba(0, 0, 0, 0.1);
+         border-radius: .3em;
+         padding: .6em .8em;
+
+         line-height: 120%;
+         text-decoration: none;
+
+         background: linear-gradient(hsla(0, 0%, 100%, 0.2), transparent);
+
+         text-shadow: 0 -.05em .05em rgba(0, 0, 0, .5);
+         box-shadow: 0 .05em .25em rgba(0, 0, 0, .5);
+
+         cursor: pointer;
+       }
+
+      .show-modal {
+        color: #fff;
+        background: #42b983;
+      }
+
+      .modal-mask {
+        position: fixed;
+        left: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+
+        background: rgba(0, 0, 0, .5);
+      }
+
+      .modal-container {
+        display: inline-block;
+        position: absolute;
+        top: 30%;
+        left: 50%;
+
+        border: 1px solid #ccc;
+        border-radius: .6em;
+        padding: 1em;
+        min-width: 400px;
+
+        color: #42b983;
+        background: #fff;
+
+        transform: translate(-50%, -50%);
+      }
+
+      .clearfix::after{
+        display: block;
+        clear: both;
+
+        height: 0;
+
+        content: '';
+      }
+
+      .modal-container .modal-header,
+      .modal-container .modal-body,
+      .modal-container .modal-footer {
+        padding: .8em 0;
+      }
+
+      .modal-container .modal-header {
+        border-bottom: 1px solid #ccc;
+      }
+
+      .modal-container .modal-header :not(.cancel) {
+        margin-right: 2em;
+      }
+
+      .modal-container .modal-header .cancel{
+        display: inline-block;
+        float: right;
+
+        position: relative;
+
+        margin-right: .6em;
+
+        text-decoration: none;
+
+        color: rgba(0, 0, 0, .4);
+      }
+
+      .modal-container .modal-header .cancel:hover {
+        color: rgba(0, 0, 0, .7);
+      }
+
+      .modal-container .modal-header .cancel::after {
+        display: block;
+
+        position: absolute;
+        left: -.6em;
+        top: -.6em;
+        right: -.4em;
+        bottom: -.4em;
+
+        content: "";
+      }
+
+      .modal-container .btn {
+        float: right;
+
+        color: white;
+        background: #42b983;
+      }
+      
+    </style>
+    <title>模态组件</title>
+  </head>
+  <body>
+    <template id="modal">
+      <div class="modal-mask" v-if="show" transition @click.self="cancel">
+        <div class="modal-container" v-draft>
+          <div class="modal-header clearfix">
+            <a class="cancel" href="javascript:void(0);" @click="cancel">X</a>
+            <slot name="header"></slot>
+          </div>
+          <div class="modal-body">
+            <slot name="body"></slot>
+          </div>
+          <div class="modal-footer">
+            <button class="btn" @click="confirm">确定</button>
+            <slot name="footer"></slot>
+          </div>
+        </div>
+      </div>
+    </template>
+    <div id="demo">
+      <button class="btn show-modal" @click="showModal">show modal</button>
+      <modal :show.sync="isShow" :cancel-fn="cancelFn" :confirm-fn="confirmFn">
+        <h3 slot="header">我是header</h3>
+        <h3 slot="body"> hello!</h3>
+      </modal>
+    </div>
+    <script>
+      Vue.directive('draft', {
+
+        bind: function() {
+          var _self = this,
+              setPos;
+
+          setPos = function(newPos) {
+            var oldPos = $(_self.el).data('evtPos'),
+                offsetLeft = $(_self.el).offset().left + newPos.x - oldPos.x,
+                offsetTop = $(_self.el).offset().top + newPos.y -oldPos.y;
+
+            $(_self.el).offset({
+              left: offsetLeft,
+              top: offsetTop
+            });
+          }
+
+          $(this.el).on('mousedown', function(e) {
+            $(this).addClass('draft').data('evtPos', {
+              x: e.pageX - $(_self.el).offset().left,
+              y: e.pageY - $(_self.el).offset().top
+            });
+          });
+
+          $('body').on('mousemove', function(e) {
+            if ($(_self.el).hasClass('draft')) {
+              $(_self.el).css('cursor', 'move');
+              setPos({
+                x: e.pageX - $(_self.el).offset().left,
+                y: e.pageY - $(_self.el).offset().top
+              });
+            }
+
+          });
+
+          $('body').on('mouseup', function() {
+            $(_self.el).css('cursor', 'inherit');
+            $(_self.el).removeClass('draft').removeAttr('evtPos');
+          });
+        }
+      });
+      Vue.component('modal', {
+        template: '#modal',
+
+        props: {
+          show: {
+             type: Boolean,
+             twoWay: true
+          },
+
+          cancelFn: Function,
+          confirmFn: Function
+        },
+
+        methods: {
+          confirm: function() {
+            this.show = false;
+            if (this.confirmFn) {
+              this.confirmFn();
+            }
+
+          },
+
+          cancel: function() {
+            this.show = false;
+            if (this.cancelFn) {
+              this.cancelFn();
+            }
+
+          }
+        }
+      });
+      new Vue({
+        el: '#demo',
+
+        data: {
+          isShow: true
+        },
+
+        methods: {
+          showModal: function() {
+            this.isShow = true;
+          },
+
+          confirmFn: function() {
+            alert('确定');
+          },
+
+          cancelFn: function() {
+            alert('取消');
+          }
+
+        }
+      });
+
+    </script>
+  </body>
+</html>

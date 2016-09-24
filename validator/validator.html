@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="http://vuejs.org/js/vue.js"></script>
+    <title>表单验证</title>
+    <style>
+      ul,li {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      #demo {
+        margin: 0 auto;
+        margin-top: 100px;
+        max-width: 300px;
+      }
+
+      .btn {
+        display: inline-block;
+
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: .3em;
+        padding: .6em .8em;
+
+        text-decoration: none;
+
+        background: linear-gradient(hsla(0, 0%, 100%, 0.2), transparent);
+
+        text-shadow: 0 -.05em .05em rgba(0, 0, 0, .5);
+        box-shadow: 0 .05em .25em rgba(0, 0, 0, .5);
+
+        cursor: pointer;
+      }
+
+      .clearfix:after {
+        display: block;
+
+        height: 0;
+
+        clear: both;
+
+        content: "";
+
+      }
+
+      .user-panel {
+        border-radius: .3em;
+
+        box-shadow: -.3em 0 .2em  -.2em rgba(0, 0, 0, 0.2),
+                    .3em 0 .2em -.2em rgba(0, 0, 0, 0.2),
+                    0 .3em .2em -.2em rgba(0, 0, 0, 0.2);
+      }
+
+      .user {
+        overflow: hidden;
+
+        border: 1px solid #ccc;
+        border-bottom: 0;
+        padding: .3em .5em;
+        height: 2em;
+
+        line-height: 2em;
+
+        background: rgb(232, 224, 224);
+      }
+
+      .user .remove {
+        float: right;
+
+        position: relative;
+
+        margin-right: .6em;
+
+        font-size: 120%;
+        text-decoration: none;
+
+        color: rgba(0, 0, 0, 0.8);
+        background: inherit;
+        opacity: 0;
+
+        transition: .5s opacity;
+      }
+
+      .user .remove::after {
+        display: block;
+
+        position: absolute;
+        left: -.6em;
+        top: -.6em;
+        right: -.4em;
+        bottom: -.4em;
+
+        content: "";
+      }
+
+      .user:hover .remove {
+        opacity: 1;
+      }
+
+      .user:last-child {
+        border-bottom: 1px solid #ccc;
+        border-bottom-left-radius: .3em;
+        border-bottom-right-radius: .3em;
+      }
+
+      .user:first-child {
+        border-top-left-radius: .3em;
+        border-top-right-radius: .3em;
+      }
+
+      .addnew {
+        margin-top: 20px;
+      }
+
+      .addnew label {
+        display: inline-block;
+        float: left;
+
+        height: 2em;
+        line-height: 2em;
+        width: 4em;
+      }
+
+      .addnew .form-group {
+        position: relative;
+
+        margin-left: 4em;
+        padding-bottom: 40px;
+      }
+
+      .addnew .callout-transition {
+        display: inline-block;
+
+        position: absolute;
+        left: 0;
+        top: calc(2em + 6px);
+
+        margin-top: .1em;
+        margin-bottom: 1em;
+        border: 1px solid #ccc;
+        border-radius: .3em;
+        padding: .8em 1em;
+        font-size: 80%;
+
+        color: rgba(0, 0, 0, .8);
+        background: #f6cd53;
+
+        transform-origin: .8em -.36em;
+      }
+
+      .addnew .callout-leave {
+        transform: scale(0);
+        transition: .5s transform;
+      }
+
+      .addnew .callout-enter {
+        transform: scale(0);
+        animation: 1s callEnter;
+      }
+
+      .addnew .callout-transition::before {
+        display: inline-block;
+
+        position: absolute;
+        left: .8em;
+        top: -.36em;
+
+        width: .5em;
+        height: .5em;
+
+        border: inherit;
+        border-left: 0;
+        border-bottom: 0;
+        background: inherit;
+
+        transform: rotate(-45deg);
+
+        content: "";
+      }
+
+      .addnew input[type="text"] {
+        box-sizing: border-box;
+        width: 100%;
+        height: 2em;
+        line-height: 2em;
+        padding-left: .4em;
+      }
+
+      .addnew .add {
+        font-size: inherit;
+
+        color: white;
+        background-color: #58a;
+      }
+
+      .addnew .add {
+        float: right;
+      }
+
+      @keyframes callEnter {
+        from {transform: scale(1);}
+        70% {transform: scale(1.1);}
+        to {transform: scale(1);}
+      }
+    </style>
+  </head>
+  <body>
+    <div id="demo">
+      <ul class="user-panel">
+        <li class="user" v-for="user in users" transition>
+          {{user.name}} - {{user.email}} <a href="javascript:void(0);" class="remove" @click="removeUser(user)">x</a>
+        </li>
+      </ul>
+      <form class="addnew clearfix" @submit.prevent="addUser">
+          <label>用户名：</label>
+          <div class="form-group">
+            <input type="text" v-model="addNew.name">
+            <div v-show="!validation.name" transition="callout">用户名不能为空</div>
+          </div>
+          <label>邮箱：</label>
+          <div class="form-group">
+            <input type="text" v-model="addNew.email">
+            <div v-show="!validation.email" transition="callout">邮箱格式不正确</div>
+          </div>
+        <button class="btn add" href="javascript:void(0);">添加</button>
+      </form>
+    </div>
+    <script>
+      var emailReg = /^\w+@[A-Za-z0-9]+\.\w+$/,
+          local = {
+            get: function(key) {
+              return JSON.parse(localStorage.getItem(key));
+            },
+            set: function(key, data) {
+              return localStorage.setItem(key, JSON.stringify(data));
+            }
+          };
+
+      new Vue({
+        el: '#demo',
+
+        data: {
+          addNew: {
+            name: '',
+            email: ''
+          },
+
+          users: local.get('validator') || []
+        },
+
+        watch: {
+          users: function() {
+            local.set('validator', this.users);
+          }
+        },
+
+        computed: {
+          validation: function() {
+            return {
+              name: this.addNew.name.trim().length,
+              email: emailReg.test(this.addNew.email)
+            };
+
+          },
+
+          isvalid: function() {
+            var validation = this.validation;
+            return Object.keys(validation).every(function(key) {
+              return validation[key];
+            });
+
+          },
+        },
+
+        methods: {
+          addUser: function() {
+            if (this.isvalid) {
+              var addNew = this.objCopy(this.addNew);
+              this.users.push(addNew);
+              this.clearInput();
+            }
+
+          },
+
+          removeUser: function(user) {
+            this.users.$remove(user);
+          },
+
+          objCopy: function(obj) {
+            var ret = {};
+            for (var i in obj) {
+              ret[i] = obj[i];
+            }
+
+            return ret;
+          },
+
+          clearInput: function() {
+            for(var i in this.addNew) {
+              this.addNew[i] = '';
+            }
+
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
