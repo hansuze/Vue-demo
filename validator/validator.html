@@ -130,7 +130,7 @@
       padding-bottom: 40px;
     }
 
-    .addnew .callout-transition {
+    .addnew .callout{
       display: inline-block;
 
       position: absolute;
@@ -150,17 +150,17 @@
       transform-origin: .8em -.36em;
     }
 
-    .addnew .callout-leave {
+    .addnew .callout-leave-active {
       transform: scale(0);
       transition: .5s transform;
     }
 
-    .addnew .callout-enter {
+    .addnew .callout-enter-active {
       transform: scale(0);
       animation: 1s callEnter;
     }
 
-    .addnew .callout-transition::before {
+    .addnew .callout:before {
       display: inline-block;
 
       position: absolute;
@@ -209,20 +209,25 @@
 <body>
 <div id="demo">
   <ul class="user-panel">
-    <li class="user" v-for="user in users" transition>
+    <li class="user" v-for="user in users">
       {{user.name}} - {{user.email}} <a href="javascript:void(0);" class="remove" @click="removeUser(user)">x</a>
     </li>
   </ul>
   <form class="addnew clearfix" @submit.prevent="addUser">
     <label>用户名：</label>
     <div class="form-group">
-      <input type="text" v-model="addNew.name">
-      <div v-show="!validation.name" transition="callout">用户名不能为空</div>
+      <input type="text" v-model="addNew.name" @keyup.enter.prevent="focusNext">
+      <transition name="callout">
+        <div class="callout" v-show="!validation.name">用户名不能为空</div>
+      </transition>
     </div>
     <label>邮箱：</label>
     <div class="form-group">
-      <input type="text" v-model="addNew.email">
-      <div v-show="!validation.email" transition="callout">邮箱格式不正确</div>
+      <input type="text" v-model="addNew.email" @keyup.enter.prevent="focusNext">
+      <transition name="callout">
+        <div class="callout" v-show="!validation.email">邮箱格式不正确</div>
+      </transition>
+
     </div>
     <button class="btn add" href="javascript:void(0);">添加</button>
   </form>
@@ -267,9 +272,10 @@
 
       isvalid: function() {
         var validation = this.validation;
+
         return Object.keys(validation).every(function(key) {
           return validation[key];
-        });
+        })
 
       },
     },
@@ -301,6 +307,37 @@
         for(var i in this.addNew) {
           this.addNew[i] = '';
         }
+
+      },
+
+      focusNext: function(event) {
+        var form  = event.target.parentElement.parentElement,
+            inputAry = form.querySelectorAll('input'),
+            index = -1;
+
+        inputAry.forEach(function(item, idx) {
+          if (item === event.target) {
+            return index = idx;
+          }
+        });
+
+        if (index === -1) {
+          return;
+        }
+
+        if (index + 1 === inputAry.length) {
+          if (this.isvalid) {
+            form.submit();
+          }
+
+          return;
+        }
+
+       inputAry[index + 1].focus();
+
+
+
+
 
       }
     }
